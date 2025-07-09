@@ -1,0 +1,303 @@
+---
+
+# 🚀 **PIPELINE ACTUAL DE ANÁLISIS DE TRANSPORTADORES**
+
+---
+
+## **FASE 1: Preparación y organización**
+
+✅ Definir familias de interés: `HMA`, `PIP`, `TIP`, `NIP`, `NRAMP`, `PCS`, `MT-L`
+✅ Estructurar carpetas:
+
+```
+TRANSPORTADORES/
+│
+├── data_proteomas/
+│   ├── salix_purpurea/
+│   ├── eucalyptus_globulus/
+│   ├── ...
+│
+├── data_proteomas/analisis_filogenia/
+│   ├── fastas_combinados/         → Secuencias combinadas por familia
+│   ├── alineamientos/             → Alineamientos por familia y global
+│   ├── hmmscan_resultados/        → Salida de hmmscan
+│   ├── clustering/                → Mapas de calor y dendrogramas
+```
+
+---
+
+## **FASE 2: Alineamiento de secuencias**
+
+✅ Usar **MAFFT** para alinear las secuencias de cada familia por separado
+✅ Generar archivos tipo:
+`HMA_alineado.faa`
+`PIP_alineado.faa`
+...
+
+✅ Concatenar los alineamientos en un global:
+`transportadores_alineado.faa`
+
+---
+
+## **FASE 3: Similitud global y clúster de secuencias**
+
+✅ Correr el script `heatmap_global_de_similitud_de_transportadores.py`
+✅ Detectar que **las secuencias deben tener el mismo largo** en el archivo concatenado (propio de un alineamiento)
+✅ Mejorare la visualización:
+
+* Limpiar los IDs de las secuencias (sin descripciones largas)
+* Ajustar títulos y posiciones de colorbar
+* Mejorar el estilo del clustermap por familia
+
+---
+
+## **FASE 4: Búsqueda de dominios con HMMER**
+
+✅ Correr **hmmscan** para cada familia contra la base Pfam-A:
+
+```
+hmmscan --tblout <familia>_pfam.tblout Pfam-A.hmm <familia>_combinado.faa
+```
+
+✅ Los `.tblout` quedaron en:
+`TRANSPORTADORES/data_proteomas/analisis_filogenia/hmmscan_resultados/`
+
+---
+
+## **FASE 5: Primeros pasos de análisis de dominios**
+
+✅ Preparar un Rscript inspirado en lo que hice para ELIP
+✅ Definir que necesitas:
+
+* Contar dominios por proteína
+* Contar dominios por especie
+* Distribuciones de score
+* UpSetPlot de presencia/ausencia
+
+✅ Consolidar los `.tblout` en un único CSV limpio para poder correr ese análisis
+
+
+
+# 🎯 **Lo que viene, paso a paso**
+
+
+gráfico en R sobre ese CSV:
+
+   * Dominios por proteína
+   * Dominios por especie
+   * Distribución de scores
+   * UpSetPlot
+
+
+
+POR DELANTE
+
+3. **Análisis opcional avanzado:**
+
+   * PCA de presencia/ausencia
+   * Red de co-ocurrencia de dominios
+
+
+
+=====================
+=====================
+====================
+====================
+
+USO DE LLM DURO
+
+=========================
+
+
+Pipeline ordenado, completo y práctico, basado en ELIPs, pero adaptado a transportadores, integrando:
+
+✅ Limpieza previa de .tblout si es necesario
+✅ Análisis del número de dominios por proteína
+✅ Conteo de dominios por especie (lo que pediste nuevo)
+✅ Distribución de scores
+✅ UpSetPlot final
+
+🔬 PIPELINE PARA ANÁLISIS DE DOMINIOS TRANSPORTADORES POST-HMMSCAN
+PASO 0: Requisitos previos
+Ya tienes los .tblout de hmmscan generados para cada familia en:
+
+bash
+Copiar
+Editar
+/mnt/c/Users/gabri/Documents/SCRIPTS_ESTUDIO_PYTHON/TRANSPORTADORES/data_proteomas/analisis_filogenia/hmmscan_resultados/
+Ejemplos:
+HMA_pfam.tblout
+PIP_pfam.tblout
+...hasta los 7 .tblout
+
+PASO 1: Combinar y limpiar los .tblout en un solo CSV procesable
+Tienes que usar un script en Python para convertir los .tblout a CSV, extrayendo al menos:
+
+query_name (nombre de la proteína)
+
+target_name (dominio Pfam identificado)
+
+score_full
+
+E-value_full
+
+Este script lo puedes llamar, por ejemplo, procesar_tblout_pfam.py. Ya te lo había sugerido, si quieres te lo dejo listo nuevamente.
+
+🔧 Salida esperada:
+Un archivo único:
+pfam_transportadores.csv
+
+PASO 2: Análisis en R — Dominio por proteína y por especie
+Correr un script similar al de ELIP, pero con estas modificaciones:
+
+✨ Limpieza e incorporación de especie y familia desde query_name
+Si tus IDs son como:
+ATH_HMA_001|algo|algo
+
+Entonces:
+
+Especie = "ATH"
+
+Familia = "HMA"
+
+🔥 Pipeline en R:
+r
+Copiar
+Editar
+rm(list = ls())
+cat("\014")
+
+# -----------------------
+# Cargar librerías
+# -----------------------
+required_packages <- c("readr", "dplyr", "ggplot2", "tidyr", "forcats", "UpSetR")
+new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages)
+lapply(required_packages, library, character.only = TRUE)
+
+# -----------------------
+# Leer y preparar datos
+# -----------------------
+file_path <- "C:/Users/gabri/Documents/SCRIPTS_ESTUDIO_PYTHON/TRANSPORTADORES/data_proteomas/analisis_filogenia/hmmscan_resultados/pfam_transportadores.csv"
+
+pfam_data <- read_csv(file_path, show_col_types = FALSE) %>%
+  mutate(
+    Especie = sub("_.*", "", query_name),
+    Familia = sub(".*_(.*)_.*", "\\1", query_name)
+  )
+
+# -----------------------
+# 1. Número de dominios únicos por proteína
+# -----------------------
+dominios_por_proteina <- pfam_data %>%
+  group_by(query_name) %>%
+  summarise(n_dominios = n_distinct(target_name), .groups = "drop") %>%
+  arrange(desc(n_dominios))
+
+ggplot(dominios_por_proteina, aes(x = n_dominios)) +
+  geom_histogram(binwidth = 1, fill = "#0072B2", alpha = 0.8) +
+  geom_vline(aes(xintercept = mean(n_dominios)), color = "orange", linetype = "dashed") +
+  labs(title = "Distribución de dominios Pfam por proteína", x = "N° de dominios únicos", y = "Frecuencia") +
+  theme_minimal()
+
+# -----------------------
+# 2. Conteo de dominios por especie
+# -----------------------
+conteo_dominios <- pfam_data %>%
+  group_by(Especie, target_name) %>%
+  summarise(n_veces = n(), .groups = "drop") %>%
+  arrange(Especie, desc(n_veces))
+
+print(conteo_dominios)
+
+# -----------------------
+# 3. Top dominios globales
+# -----------------------
+top_dominios <- pfam_data %>%
+  count(target_name, sort = TRUE, name = "n_proteinas") %>%
+  mutate(porcentaje = n_proteinas / nrow(dominios_por_proteina) * 100)
+
+ggplot(top_dominios %>% head(15), aes(x = fct_reorder(target_name, n_proteinas), y = n_proteinas, fill = porcentaje)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_gradient(low = "skyblue", high = "darkblue") +
+  labs(title = "Top 15 dominios más frecuentes", x = "Dominio", y = "N° de proteínas", fill = "%") +
+  theme_minimal()
+
+# -----------------------
+# 4. UpSetPlot de presencia/ausencia
+# -----------------------
+binaria <- pfam_data %>%
+  mutate(presente = 1) %>%
+  pivot_wider(names_from = target_name, values_from = presente, values_fill = 0)
+
+mat <- as.data.frame(binaria)
+rownames(mat) <- mat$query_name
+mat$query_name <- NULL
+
+pdf("C:/Users/gabri/Documents/SCRIPTS_ESTUDIO_PYTHON/TRANSPORTADORES/data_proteomas/analisis_filogenia/hmmscan_resultados/upset_transportadores.pdf", width = 12, height = 8)
+upset(mat, order.by = "freq", text.scale = 1.3)
+dev.off()
+
+cat("\n✅ Análisis completado.\n")
+PASO 3: Recomendaciones opcionales adicionales
+✅ Puedes agregar gráficos por familia usando facet_wrap(Familia) si te interesa la separación por grupo funcional
+✅ Podrías hacer un PCA de presencia/ausencia, para visualizar agrupamientos de especies por perfil de dominios
+✅ Si quieres ir más lejos, un análisis de redes de co-ocurrencia de dominios usando igraph es muy elegante, dime y te lo armo
+
+🔧 RESUMEN DE ARCHIVOS ESPERADOS
+Archivo	Cómo se genera
+*.tblout	Salida bruta de hmmscan
+pfam_transportadores.csv	Script Python de limpieza y combinación
+Gráficos .pdf y matrices .csv	Script en R de análisis posterior
+==================================
+==================================
+==================================
+==================================
+==================================
+✅ ¿Qué hace exactamente el script?
+✔ Lee tu archivo .csv con resultados de hmmscan para transportadores.
+✔ Identifica la familia de cada proteína.
+✔ Para cada familia:
+ ◾ Calcula los 7 dominios con mejor soporte (por promedio de score_full).
+ ◾ Genera la matriz binaria de presencia/ausencia solo de esos 7 dominios.
+ ◾ Calcula las combinaciones frecuentes de dominios (con tus filtros de mínimo 3 proteínas, máximo 10 combinaciones).
+ ◾ Genera y guarda:
+  ✔ CSV con la matriz binaria filtrada.
+  ✔ CSV con las combinaciones frecuentes.
+  ✔ Objeto .RData con todo por si quieres cargarlo después.
+  ✔ Gráfico UpSetPlot bonito y limpio, con colores, título y resumen informativo.
+Descripción del UpSetPlot generado
+Se generaron gráficos de tipo UpSetPlot para visualizar la ocurrencia y coocurrencia de dominios Pfam dentro de proteínas de cada familia de transportadores analizada. Este enfoque permite identificar combinaciones frecuentes de dominios estructurales en el contexto de la diversidad funcional de los transportadores.
+
+Para cada familia:
+
+✔ Se seleccionaron los siete dominios con mayor soporte, determinado a partir del promedio del score HMM (score_full) obtenido en el escaneo con hmmscan.
+✔ Se construyó una matriz binaria de presencia/ausencia, representando la ocurrencia de dichos dominios en cada proteína de la familia.
+✔ El UpSetPlot visualiza:
+ ◾ En la parte inferior: las combinaciones específicas de dominios presentes en las proteínas.
+ ◾ En la parte superior: el tamaño de la intersección, es decir, cuántas proteínas comparten exactamente esa combinación de dominios.
+✔ Las barras horizontales a la izquierda indican el tamaño total de cada conjunto (dominio).
+✔ Los colores asociados a cada dominio permiten facilitar la interpretación visual.
+
+Además, se incluyó información complementaria como:
+
+El número total de proteínas analizadas por familia.
+
+La cantidad de proteínas incluidas en el gráfico, correspondiente a aquellas que presentan combinaciones frecuentes según los umbrales establecidos.
+
+El total de dominios considerados.
+
+Este tipo de visualización facilita la detección de patrones conservados o recurrentes en la arquitectura de dominios, lo que puede sugerir posibles relaciones funcionales o evolutivas dentro de cada familia de transportadores.
+
+Resumen técnico breve para métodos (si necesitas algo tipo paper):
+"Se generaron gráficos UpSetPlot por familia de transportadores utilizando los siete dominios Pfam con mayor soporte (mayor score HMM promedio). Se visualizaron las combinaciones frecuentes de dichos dominios, permitiendo identificar patrones recurrentes de coocurrencia funcional."
+
+
+✅ Es solo para los UpSetPlot
+==================================
+==================================
+==================================
+==================================
+==================================
+==================================
