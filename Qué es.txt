@@ -1,0 +1,152 @@
+======Qué es? ======== 
+
+Árbol general (por familia y especie)
+
+Versión 1 – Iconos grandes. Cada hoja del árbol representa una secuencia proteica.Los colores indican familia funcional (NIP, PIP, TIP, HMA, MT-L, NRAMP, PCS). Las formas indican especies (ej. Arabidopsis, Populus, Eucalyptus, etc.). Sirve para ver cómo se agrupan por función y especie, o si hay mezclas interesantes.
+
+Versión 2 – Detallada, Útil para revisar casos específicos, También coloreado por especie y estructurado por similitud evolutiva
+
+Árboles por familia (por especie y cantidad de dominios proteicos Pfam)
+
+útiles para ver mejor las diferencias y similitudes dentro del mismo grupo. Hay especialización de especies notoria. ver caso de Salix purpúrea y Populus nigra.
+
+=====
+
+Otras figuras
+
+
+-Heatmap de scores HMM
+Muestra qué tan fuerte es la señal de dominio funcional (Pfam) en cada proteína. Colores más oscuros = score más alto. Da una idea de cuáles proteínas tienen funcionalidades más conservadas.
+
+-Histograma de cantidad de dominios por proteína.
+Muestra la cantidad de dominios funcionales que tiene cada proteína. Permite ver si hay familias que tienden a tener más o menos dominios.
+
+-UpSetPlots por familia. 
+Muestra la combinatoria de dominios Pfam dentro de cada familia. Es como un Venn diagram moderno y más claro. Ideal para ver patrones funcionales únicos por familia.
+
+-Top dominios por frecuencia. 
+Muestra los dominios Pfam más frecuentes en cada grupo. Ayuda a identificar cuáles funciones se repiten más y podrían ser clave.
+
+
+
+
+
+========================================= USO DE LLM =============================================
+
+
+
+
+
+
+
+
+Perfecto. Acá va una versión adaptada para **clases escolares (básica y media)**, con explicaciones simples, ejemplos cotidianos y sin perder el contenido científico. Está orientado a **mostrar, contar y conversar** con estudiantes en torno a estas figuras, conectando con la biología y la ciencia de forma accesible:
+
+---
+
+# 🌱 Figuras de proteínas y evolución para clases de biología
+
+### Explicación de los gráficos –
+
+Hola!
+Este material fue preparado para ayudarte a enseñar conceptos de biología moderna (proteínas, evolución, bioinformática) de forma visual, clara y entretenida. Acá tienes una guía para entender y explicar **cada gráfico**, con ejemplos que puedes adaptar según el nivel de tus estudiantes.
+
+---
+
+## 1. 🧬 Árbol general de proteínas (versiones: iconos grandes y detallado)
+
+**¿Qué muestra?**
+Un "árbol genealógico" de proteínas, parecido a un árbol familiar. Pero en vez de personas, están proteínas agrupadas por **función** (qué hacen) y **especie** (de qué planta vienen).
+
+**Cómo explicarlo en clase:**
+
+> Imagina que cada proteína es como un tipo de herramienta, como martillos, destornilladores o alicates.
+> Algunas herramientas se parecen entre sí, otras son más diferentes.
+> Las agrupamos por *familia* (tipo de herramienta) y por *origen* (si viene de una caja de herramientas chilena o europea, por ejemplo).
+> Así podemos ver qué tan parecidas son, cómo han evolucionado, y cuáles se han repetido más en ciertas plantas.
+
+* **Colores** = tipo de proteína (ej. canal de agua, transportador de metal)
+* **Formas** = especie vegetal (ej. *Arabidopsis*, *Eucalyptus*)
+* **Ramas** = grado de parentesco evolutivo entre proteínas
+
+---
+
+## 2. 🌿 Árboles por familia de proteínas
+
+**¿Qué muestra?**
+Aquí separamos el árbol anterior y miramos *una sola familia* a la vez (por ejemplo, solo martillos). Así podemos ver mejor las diferencias y similitudes **dentro del mismo grupo**.
+
+**Cómo explicarlo en clase:**
+
+> Es como hacer zoom solo a los destornilladores: vemos cuáles son grandes, pequeños, con punta fina o gruesa, y si una especie tiene muchos repetidos.
+> Podemos hacer preguntas como: ¿Por qué *Populus* tiene tantos? ¿Será que los necesita más?
+
+---
+
+## 3. 🔥 Heatmap (mapa de calor) de scores HMM
+
+**¿Qué muestra?**
+Un gráfico donde cada casilla representa una proteína, y el color nos dice **qué tan fuerte o clara es su función**. Colores más oscuros significan proteínas "más definidas".
+
+**Cómo explicarlo en clase:**
+
+> Piensa en una prueba: una proteína con buen "puntaje" tiene una función muy clara, como un estudiante que sacó 7 en un ramo.
+> Este mapa muestra cuántas proteínas tienen un rol bien definido y cuáles son más dudosas.
+
+---
+
+## 4. 📉 Histograma: cuántos dominios tiene cada proteína
+
+**¿Qué muestra?**
+Las proteínas están hechas de partes llamadas **dominios**. Este gráfico cuenta cuántos tiene cada una.
+
+**Cómo explicarlo en clase:**
+
+> Es como contar cuántas herramientas tiene una navaja suiza: algunas tienen 2 partes, otras 5 o más.
+> Las proteínas también pueden tener más o menos "partes funcionales", y eso las hace más versátiles.
+
+---
+
+## 5. 🧩 UpSetPlot por familia
+
+**¿Qué muestra?**
+Aquí vemos **qué combinaciones de dominios** aparecen en las proteínas de cada familia. Es un poco como un Venn diagram moderno.
+
+**Cómo explicarlo en clase:**
+
+> Imagina que cada dominio es un ingrediente. Este gráfico nos dice qué recetas se repiten más:
+> ¿cuántas proteínas tienen "sal + ajo"? ¿Cuántas solo "sal"?
+> Nos ayuda a entender qué funciones son más comunes o únicas en una familia.
+
+---
+
+## 6. 🏆 Top dominios por frecuencia
+
+**¿Qué muestra?**
+Una lista con los **dominios (partes funcionales)** que más se repiten entre todas las proteínas analizadas.
+
+**Cómo explicarlo en clase:**
+
+> Es como contar los ingredientes más comunes en una cocina: si todas las proteínas usan "sal", entonces es importante.
+> Aquí vemos qué funciones son más frecuentes y posiblemente más esenciales.
+
+---
+
+## 💡 Sugerencias para aplicarlo en clases
+
+* **Básica (5°–8°):**
+
+  * Presentar las proteínas como herramientas con diferentes funciones.
+  * Jugar a agruparlas por colores y formas (asociación visual).
+  * Usar analogías cotidianas (navaja suiza, caja de herramientas, cocina).
+
+* **Media (I–IV):**
+
+  * Relacionar con genética, evolución, estructura y función de proteínas.
+  * Hacer análisis comparativo entre especies: ¿quién tiene más copias? ¿por qué?
+  * Introducir herramientas bioinformáticas de forma guiada.
+
+---
+==========================
+
+Gabriel.
