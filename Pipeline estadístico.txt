@@ -1,0 +1,278 @@
+necesito algunas cosas: al código "rm(list = ls())
+cat("\014")
+
+# -----------------------
+# Cargar librerías
+# -----------------------
+required_packages <- c("readr", "dplyr", "ggplot2", "tidyr", "forcats", "UpSetR", "RColorBrewer")
+new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages)
+lapply(required_packages, library, character.only = TRUE)
+
+# -----------------------
+# Leer y preparar datos
+# -----------------------
+file_path <- "C:/Users/gabri/Documents/SCRIPTS_ESTUDIO_PYTHON/TRANSPORTADORES/data_proteomas/analisis_filogenia/hmmscan_resultados/pfam_transportadores.csv"
+
+pfam_data <- read_csv(file_path, show_col_types = FALSE) %>%
+  mutate(
+    Especie = sub("_.*", "", query_name),
+    Familia = sub(".*_(.*)_.*", "\\1", query_name)
+  )
+
+# -----------------------
+# 1. Número de dominios únicos por proteína
+# -----------------------
+dominios_por_proteina <- pfam_data %>%
+  group_by(query_name) %>%
+  summarise(n_dominios = n_distinct(target_name), .groups = "drop") %>%
+  arrange(desc(n_dominios))
+
+ggplot(dominios_por_proteina, aes(x = n_dominios)) +
+  geom_histogram(binwidth = 1, fill = "#0072B2", alpha = 0.8) +
+  geom_vline(aes(xintercept = mean(n_dominios)), color = "orange", linetype = "dashed") +
+  labs(title = "Distribución de dominios Pfam por proteína", x = "N° de dominios únicos", y = "Frecuencia") +
+  theme_minimal()
+
+# -----------------------
+# 2. Conteo de dominios por especie
+# -----------------------
+conteo_dominios <- pfam_data %>%
+  group_by(Especie, target_name) %>%
+  summarise(n_veces = n(), .groups = "drop") %>%
+  arrange(Especie, desc(n_veces))
+
+print(conteo_dominios)
+
+# -----------------------
+# 3. Top dominios globales
+# -----------------------
+top_dominios <- pfam_data %>%
+  count(target_name, sort = TRUE, name = "n_proteinas") %>%
+  mutate(porcentaje = n_proteinas / nrow(dominios_por_proteina) * 100)
+
+ggplot(top_dominios %>% head(15), aes(x = fct_reorder(target_name, n_proteinas), y = n_proteinas, fill = porcentaje)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_gradient(low = "skyblue", high = "darkblue") +
+  labs(title = "Top 15 dominios más frecuentes", x = "Dominio", y = "N° de proteínas", fill = "%") +
+  theme_minimal()
+
+# -----------------------
+# 4. Distribución de scores HMM por dominio (global)
+# -----------------------
+top_10_dominios <- top_dominios$target_name[1:10]
+
+pfam_data %>%
+  filter(target_name %in% top_10_dominios) %>%
+  ggplot(aes(x = fct_reorder(target_name, score_full, .fun = median), y = score_full)) +
+  geom_boxplot(aes(fill = target_name), alpha = 0.7, show.legend = FALSE) +
+  stat_summary(fun = median, geom = "point", color = "red", size = 2) +
+  labs(
+    title = "Distribución de scores HMM por dominio Pfam",
+    subtitle = "Top 10 dominios más frecuentes",
+    x = "Dominio Pfam",
+    y = "Score HMM (full)"
+  ) +
+  coord_flip() +
+  theme_minimal()
+
+# ----------------------------
+# 5. UpSetPlot con colores únicos por dominio
+# ----------------------------
+binaria <- pfam_data %>%
+  distinct(query_name, target_name) %>%  # Elimina duplicados exactos
+  mutate(presente = 1) %>%
+  pivot_wider(names_from = target_name, values_from = presente, values_fill = 0)
+
+mat <- as.data.frame(binaria)
+rownames(mat) <- mat$query_name
+mat$query_name <- NULL
+
+# Crear paleta de colores con longitud exacta
+dominios <- colnames(mat)
+n_dominios <- length(dominios)
+
+colores <- colorRampPalette(brewer.pal(12, "Set3"))(n_dominios)
+names(colores) <- dominios
+
+# Graficar y guardar UpSetPlot
+pdf("C:/Users/gabri/Documents/SCRIPTS_ESTUDIO_PYTHON/TRANSPORTADORES/data_proteomas/analisis_filogenia/hmmscan_resultados/upset_colores_por_dominio.pdf", width = 14, height = 8)
+upset(mat,
+      sets = dominios,
+      sets.bar.color = colores,
+      matrix.color = "gray20",
+      main.bar.color = "#4B0082",
+      order.by = "freq",
+      text.scale = 1.4,
+      keep.order = TRUE)
+dev.off()
+
+
+cat("\n✅ Análisis completado sin problemas.\n")" necesito que le agregues el top de dominios más frecuentes, la distribución de dominios, así como mantener el upsetplot y la distribución de puntajes de hmm.
+
+Para el upsetplot, tengo un asunto: Se me apilan las secuencias, básicamente aparecen todas pero definir cuáles son las más interesante de mostrar el lo clave, entonces me gustaría mostrar en el upsetplot las que podrían indicar interacción, se puede hacer algo así? o tiene que pulirse el uptsetplot aparte?
+
+
+ChatGPT Plus
+Excelente lo que estás planteando, es muy profesional. Te explico cómo mejorar y modular tu script en R para que:
+
+✅ Mantenga todo lo que ya tienes:
+✔ Top de dominios más frecuentes.
+✔ Distribución de dominios únicos por proteína.
+✔ Distribución de scores HMM por dominio.
+✔ UpSetPlot coloreado.
+
+✅ Y además:
+✔ El UpSetPlot solo muestre un subconjunto informativo y manejable, por ejemplo:
+
+Las proteínas con más dominios.
+
+Las proteínas que contienen dominios específicos que te interesan (posibles de indicar como candidatos a interacción).
+
+Un filtro por score HMM si lo deseas.
+
+🛠️ Cómo se hace técnicamente:
+El UpSetPlot en sí no interpreta "interacción" directamente, pero tú puedes filtrar las secuencias que incluyes, de modo que el gráfico solo muestre proteínas candidatas según un criterio biológico, por ejemplo:
+
+✅ Las proteínas que contienen al menos uno de los dominios del Top 5.
+✅ Las proteínas que tienen más de 2 dominios.
+✅ Las proteínas cuyos scores HMM superan un umbral.
+
+🎯 Te dejo el script completo optimizado y comentado, incluyendo ese filtro:
+r
+Copiar
+Editar
+rm(list = ls())
+cat("\014")
+
+# -----------------------
+# Cargar librerías
+# -----------------------
+required_packages <- c("readr", "dplyr", "ggplot2", "tidyr", "forcats", "UpSetR", "RColorBrewer")
+new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages)
+lapply(required_packages, library, character.only = TRUE)
+
+# -----------------------
+# Leer y preparar datos
+# -----------------------
+file_path <- "C:/Users/gabri/Documents/SCRIPTS_ESTUDIO_PYTHON/TRANSPORTADORES/data_proteomas/analisis_filogenia/hmmscan_resultados/pfam_transportadores.csv"
+
+pfam_data <- read_csv(file_path, show_col_types = FALSE) %>%
+  mutate(
+    Especie = sub("_.*", "", query_name),
+    Familia = sub(".*_(.*)_.*", "\\1", query_name)
+  )
+
+# -----------------------
+# 1. Número de dominios únicos por proteína
+# -----------------------
+dominios_por_proteina <- pfam_data %>%
+  group_by(query_name) %>%
+  summarise(n_dominios = n_distinct(target_name), .groups = "drop") %>%
+  arrange(desc(n_dominios))
+
+ggplot(dominios_por_proteina, aes(x = n_dominios)) +
+  geom_histogram(binwidth = 1, fill = "#0072B2", alpha = 0.8) +
+  geom_vline(aes(xintercept = mean(n_dominios)), color = "orange", linetype = "dashed") +
+  labs(title = "Distribución de dominios Pfam por proteína", x = "N° de dominios únicos", y = "Frecuencia") +
+  theme_minimal()
+
+# -----------------------
+# 2. Conteo de dominios por especie
+# -----------------------
+conteo_dominios <- pfam_data %>%
+  group_by(Especie, target_name) %>%
+  summarise(n_veces = n(), .groups = "drop") %>%
+  arrange(Especie, desc(n_veces))
+
+print(conteo_dominios)
+
+# -----------------------
+# 3. Top dominios globales
+# -----------------------
+top_dominios <- pfam_data %>%
+  count(target_name, sort = TRUE, name = "n_proteinas") %>%
+  mutate(porcentaje = n_proteinas / nrow(dominios_por_proteina) * 100)
+
+ggplot(top_dominios %>% head(15), aes(x = fct_reorder(target_name, n_proteinas), y = n_proteinas, fill = porcentaje)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_gradient(low = "skyblue", high = "darkblue") +
+  labs(title = "Top 15 dominios más frecuentes", x = "Dominio", y = "N° de proteínas", fill = "%") +
+  theme_minimal()
+
+# -----------------------
+# 4. Distribución de scores HMM por dominio (global)
+# -----------------------
+top_10_dominios <- top_dominios$target_name[1:10]
+
+pfam_data %>%
+  filter(target_name %in% top_10_dominios) %>%
+  ggplot(aes(x = fct_reorder(target_name, score_full, .fun = median), y = score_full)) +
+  geom_boxplot(aes(fill = target_name), alpha = 0.7, show.legend = FALSE) +
+  stat_summary(fun = median, geom = "point", color = "red", size = 2) +
+  labs(
+    title = "Distribución de scores HMM por dominio Pfam",
+    subtitle = "Top 10 dominios más frecuentes",
+    x = "Dominio Pfam",
+    y = "Score HMM (full)"
+  ) +
+  coord_flip() +
+  theme_minimal()
+
+# ----------------------------
+# 5. UpSetPlot filtrado y coloreado
+# ----------------------------
+
+# FILTRO: Proteínas que tienen al menos uno de los dominios Top 5
+dominios_interes <- top_dominios$target_name[1:5]
+
+proteinas_filtradas <- pfam_data %>%
+  filter(target_name %in% dominios_interes) %>%
+  distinct(query_name) %>%
+  pull(query_name)
+
+# Crear matriz binaria solo con proteínas seleccionadas
+binaria <- pfam_data %>%
+  filter(query_name %in% proteinas_filtradas) %>%
+  distinct(query_name, target_name) %>%
+  mutate(presente = 1) %>%
+  pivot_wider(names_from = target_name, values_from = presente, values_fill = 0)
+
+mat <- as.data.frame(binaria)
+rownames(mat) <- mat$query_name
+mat$query_name <- NULL
+
+# Crear paleta de colores
+dominios <- colnames(mat)
+n_dominios <- length(dominios)
+colores <- colorRampPalette(brewer.pal(12, "Set3"))(n_dominios)
+names(colores) <- dominios
+
+# Graficar y guardar
+pdf("C:/Users/gabri/Documents/SCRIPTS_ESTUDIO_PYTHON/TRANSPORTADORES/data_proteomas/analisis_filogenia/hmmscan_resultados/upset_colores_filtrado.pdf", width = 14, height = 8)
+upset(mat,
+      sets = dominios,
+      sets.bar.color = colores,
+      matrix.color = "gray20",
+      main.bar.color = "#4B0082",
+      order.by = "freq",
+      text.scale = 1.4,
+      keep.order = TRUE)
+dev.off()
+
+cat("\n✅ Análisis completado sin problemas.\n")
+🧩 Notas finales:
+✔ Si quieres, puedo modificar el filtro para que sea:
+
+Basado en score mínimo de HMM.
+
+Basado en número de dominios > X.
+
+Solo proteínas de una especie específica.
+
+✔ Esto lo haces cambiando la parte de proteinas_filtradas.
+
+¿Quieres que te lo deje preparado con un filtro más biológico o específico? Solo dime: "quiero filtrar por..." y te lo armo.
